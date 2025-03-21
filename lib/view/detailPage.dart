@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:animation_test/constant/utilities.dart';
 import 'package:animation_test/src/home_widgets/horizontal_list.dart';
+import 'package:easy_stepper/easy_stepper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:lottie/lottie.dart';
 
 class DetailFoodScreen extends StatefulWidget {
   final String name;
@@ -11,19 +15,23 @@ class DetailFoodScreen extends StatefulWidget {
   final String protein;
 
   const DetailFoodScreen({
-    Key? key,
+    super.key,
     required this.name,
     required this.image,
     required this.calories,
     required this.protein,
-  }) : super(key: key);
+  });
 
   @override
   State<DetailFoodScreen> createState() => _DetailFoodScreenState();
 }
 
 class _DetailFoodScreenState extends State<DetailFoodScreen> {
-  int _currentStep = 0;
+  int _activeStep = 0;
+  List<bool> _completedSteps = [false, false, false, false];
+  final DraggableScrollableController _scrollController =
+      DraggableScrollableController();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -36,9 +44,13 @@ class _DetailFoodScreenState extends State<DetailFoodScreen> {
           ScreenSize.getScreenHeight(context),
         ),
       ),
-      body: _buildUI(
-        ScreenSize.getScreenWidth(context),
-        ScreenSize.getScreenHeight(context),
+      body: Stack(
+        children: [
+          _buildUI(
+            ScreenSize.getScreenWidth(context),
+            ScreenSize.getScreenHeight(context),
+          ),
+        ],
       ),
     );
   }
@@ -79,10 +91,7 @@ class _DetailFoodScreenState extends State<DetailFoodScreen> {
 
   Widget _animatedText(final screenWidth, final screenHeight) {
     return Padding(
-      padding: EdgeInsets.only(
-        top: screenHeight * 0.02,
-        // left: screenWidth * 0.10,
-      ),
+      padding: EdgeInsets.only(top: screenHeight * 0.02),
       child: Text(
             widget.name,
             style: GoogleFonts.roboto(
@@ -108,22 +117,17 @@ class _DetailFoodScreenState extends State<DetailFoodScreen> {
     );
   }
 
-  _buildUI(double screenWidth, double screenHeight) {
+  Widget _buildUI(double screenWidth, double screenHeight) {
     return Stack(
       children: [
         _headerImage(screenWidth, screenHeight),
-        Padding(
-          padding: EdgeInsets.only(
-            top: ScreenSize.getScreenHeight(context) * 0.48,
-          ),
-          child: HorizontalList(),
-        ),
         _detail(),
+        _bottomsheet(),
       ],
     );
   }
 
-  _detail() {
+  Widget _detail() {
     return Padding(
       padding: EdgeInsets.only(top: ScreenSize.getScreenHeight(context) * 0.4),
       child: Opacity(
@@ -180,58 +184,169 @@ class _DetailFoodScreenState extends State<DetailFoodScreen> {
     );
   }
 
-  void _showBottomSheet(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Container(
-          height: ScreenSize.getScreenHeight(context) * 0.5,
-          child: Stepper(
-            currentStep: _currentStep,
-            onStepTapped: (step) => setState(() => _currentStep = step),
-            onStepContinue: () {
-              if (_currentStep < 3) {
-                setState(() => _currentStep += 1);
-              }
-            },
-            onStepCancel: () {
-              if (_currentStep > 0) {
-                setState(() => _currentStep -= 1);
-              }
-            },
-            steps: [
-              Step(
-                title: Text('Step 1'),
-                content: Text('Content for Step 1'),
-                isActive: _currentStep >= 0,
-                state:
-                    _currentStep > 0 ? StepState.complete : StepState.indexed,
+  Widget _bottomsheet() {
+    return DraggableScrollableSheet(
+      controller: _scrollController,
+      initialChildSize: 0.45, // 30% of screen height initially
+      minChildSize: 0.45, // Minimum 30% of screen height
+      maxChildSize: 0.8, // Expands up to 80% of screen height
+      builder: (context, scrollController) {
+        return Opacity(
+          opacity: 0.9,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.black,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black26,
+                  blurRadius: 10,
+                  spreadRadius: 5,
+                ),
+              ],
+            ),
+            child: SingleChildScrollView(
+              controller: scrollController,
+              child: Padding(
+                padding: const EdgeInsets.all(16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Drag handle indicator
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        margin: EdgeInsets.only(bottom: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.only(left: 10.0),
+                      child: Text(
+                        "Ingredients",
+                        style: GoogleFonts.roboto(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: EdgeInsets.only(
+                        top: ScreenSize.getScreenHeight(context) * 0.015,
+                      ),
+                      child: HorizontalList(),
+                    ),
+                    // Stepper
+                    buildVerticalStepper(),
+                  ],
+                ),
               ),
-              Step(
-                title: Text('Step 2'),
-                content: Text('Content for Step 2'),
-                isActive: _currentStep >= 1,
-                state:
-                    _currentStep > 1 ? StepState.complete : StepState.indexed,
-              ),
-              Step(
-                title: Text('Step 3'),
-                content: Text('Content for Step 3'),
-                isActive: _currentStep >= 2,
-                state:
-                    _currentStep > 2 ? StepState.complete : StepState.indexed,
-              ),
-              Step(
-                title: Text('Step 4'),
-                content: Text('Content for Step 4'),
-                isActive: _currentStep >= 3,
-                state:
-                    _currentStep == 3 ? StepState.complete : StepState.indexed,
-              ),
-            ],
+            ),
           ),
         );
       },
     );
+  }
+
+  Widget buildVerticalStepper() {
+    return Row(
+      children: [
+        EasyStepper(
+          direction: Axis.vertical,
+          activeStep: _activeStep,
+          stepRadius: 10,
+          steps: List.generate(4, (index) {
+            return EasyStep(
+              icon: Icon(Icons.check),
+              finishIcon:
+                  _completedSteps[index]
+                      ? Icon(Icons.check_circle)
+                      : Icon(Icons.check),
+              title: 'Step ${index + 1}',
+            );
+          }),
+          onStepReached: (index) {
+            setState(() {
+              // Mark the selected step as completed
+              _completedSteps[index] = true;
+              _activeStep = index;
+
+              // Show Lottie animation only when Step 4 is tapped
+            });
+            if (index == 3) {
+              Lottieloading(context);
+              // Pass context when calling the function
+            }
+          },
+        ),
+        SizedBox(width: 16),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            if (_activeStep == 0) ...[
+              Text('Step 1', style: ScreenSize.getFontStyle(context)),
+              Text(
+                'Wash the ingredients',
+                style: TextStyle(color: Colors.white, fontSize: 14),
+              ),
+            ],
+            if (_activeStep == 1) ...[
+              Text('Step 2', style: ScreenSize.getFontStyle(context)),
+              Text(
+                'Chop the ingredients',
+                style: TextStyle(color: Colors.white, fontSize: 14),
+              ),
+            ],
+            if (_activeStep == 2) ...[
+              Text('Step 3', style: ScreenSize.getFontStyle(context)),
+              Text(
+                'Cook the ingredients',
+                style: TextStyle(color: Colors.white, fontSize: 14),
+              ),
+            ],
+            if (_activeStep == 3) ...[
+              Text('Step 4', style: ScreenSize.getFontStyle(context)),
+              Text(
+                'Serve the dish',
+                style: TextStyle(color: Colors.white, fontSize: 14),
+              ),
+            ],
+          ],
+        ),
+      ],
+    );
+  }
+
+  void Lottieloading(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Lottie.asset(
+            'assets/images/congrats.json', // Ensure the correct file path
+            width: 200,
+            height: 200,
+            repeat: true,
+            animate: true,
+          ),
+        );
+      },
+    );
+
+    // Wait for 3 seconds and then close the dialog and minimize the bottom sheet
+    Future.delayed(Duration(seconds: 3), () {
+      Navigator.of(context).pop(); // Close the Lottie dialog
+      _scrollController.animateTo(
+        0.45, // Minimize to initial position
+        duration: Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+      );
+    });
   }
 }
