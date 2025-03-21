@@ -35,7 +35,7 @@ class _AnimatedTextPageState extends State<AnimatedTextPage>
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: Colors.black87,
       body: _buildUI(screenWidth, screenHeight),
     );
   }
@@ -203,7 +203,7 @@ class _AnimatedTextPageState extends State<AnimatedTextPage>
       child: Text(
             "Find the Perfect\nrecipe everyday",
             style: GoogleFonts.roboto(
-              color: Colors.black,
+              color: Colors.white,
               fontSize: screenWidth * 0.08,
             ),
           )
@@ -234,7 +234,7 @@ class _AnimatedTextPageState extends State<AnimatedTextPage>
       child: Text(
             "More than 1 thousand recipes \nof healthy and delicious food.",
             style: GoogleFonts.poppins(
-              color: Colors.black,
+              color: Colors.white,
               fontSize: screenWidth * 0.04,
             ),
           )

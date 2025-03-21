@@ -9,12 +9,12 @@ class GetStartedButton extends StatelessWidget {
   final VoidCallback onCompleted;
 
   const GetStartedButton({
-    Key? key,
+    super.key,
     required this.screenWidth,
     required this.screenHeight,
     required this.controller,
     required this.onCompleted,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -27,12 +27,7 @@ class GetStartedButton extends StatelessWidget {
         ),
         child: GestureDetector(
           onTap: () {
-            controller.forward();
-            controller.addStatusListener((status) {
-              if (status == AnimationStatus.completed) {
-                Future.delayed(400.ms, onCompleted);
-              }
-            });
+            onCompleted();
           },
           child: Container(
                 width: screenWidth * 0.8,
